@@ -15,14 +15,33 @@ class MyModel(QAbstractTableModel):
 
     def start_source(self):
         index = self.index(0, 0, QModelIndex())
-        self.insertRows(index, 1, 0)
+
+        print(index.column())
+        print(index.row())
+        print(index.data())
+        print(index.isValid())
+        print(index.flags())
+        print(index.model())
+        print(index.parent())
+
+        print(self.data)
+
+        if len(self.data) < 10:
+            self.insertRows(index, 1, 0)
+
         self.setData(index, {"hello": "hello" + str(self.count), "world": "world" + str(self.count)}, Qt.EditRole)
+
+        if len(self.data) >= 10:
+            self.removeRows(index, 1, 9)
 
         self.count += 1
         self.timer.start(1000)
 
     def rowCount(self, parent: QModelIndex = None):
-        return len(self.data)
+        if len(self.data) <= 10:
+            return len(self.data)
+        else:
+            return 10
 
     def columnCount(self, parent: QModelIndex = None):
         return 2
@@ -45,9 +64,18 @@ class MyModel(QAbstractTableModel):
         self.beginInsertRows(QModelIndex(), index, index + rows - 1)
 
         for row in range(rows):
-            self.data.insert(index, {"hello":"1", "world":""})
+            self.data.insert(index, {"hello":"", "world":""})
 
         self.endInsertRows()
+        return True
+
+    def removeRows(self, position, rows, index=None):
+        self.beginRemoveRows(QModelIndex(), index, index + rows - 1)
+
+        for row in range(rows):
+            self.data.pop(index)
+
+        self.endRemoveRows()
         return True
 
     def setData(self, index, value, role=None):

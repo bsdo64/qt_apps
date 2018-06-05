@@ -33,7 +33,7 @@ class TestWindow(QMainWindow):
         self.chart = QChart()
         self.chart.legend().hide()
         self.view = QChartView(self.chart)
-        # self.view.setRenderHint(QPainter.Antialiasing)
+        self.view.setRenderHint(QPainter.Antialiasing)
         self.setCentralWidget(self.view)
 
     def set_title(self, title):

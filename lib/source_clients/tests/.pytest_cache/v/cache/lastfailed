@@ -1,0 +1,4 @@
+{
+  "test_bitmex_http.py": true,
+  "test_bitmex_ws.py": true
+}

@@ -6,6 +6,7 @@ from PyQt5.QtGui import QFont, QPainterPath, QPen, QBrush, QSurfaceFormat, QPain
 from PyQt5.QtOpenGL import QGLFormat, QGL, QGLWidget
 from PyQt5.QtWidgets import QGraphicsScene, QApplication, QGraphicsView, QOpenGLWidget, QGridLayout
 
+import pyqtgraph
 
 class MyView(QGraphicsView):
     def __init__(self, scene, parent=None):
@@ -85,7 +86,5 @@ if __name__ == '__main__':
     view.show()
 
     layout = QGridLayout()
-
-    app.setLayout
 
     app.exec()

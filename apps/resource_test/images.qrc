@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/images">
+    <file alias="qt4logo.png">images/qt4logo.png</file>
+    <file alias="zoomin.png">images/zoomin.png</file>
+    <file alias="zoomout.png">images/zoomout.png</file>
+    <file alias="rotateleft.png">images/rotateleft.png</file>
+    <file alias="rotateright.png">images/rotateright.png</file>
+    <file alias="fileprint.png">images/fileprint.png</file>
+</qresource>
+</RCC>

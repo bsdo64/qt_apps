@@ -1,9 +1,11 @@
 import os
 
 from PyQt5 import uic
-from PyQt5.QtCore import QFile, QIODevice, QMetaObject, Qt, pyqtSlot
+from PyQt5.QtCore import QMetaObject, Qt
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QTextDocument
-from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QVBoxLayout, QTextEdit, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import (
+    QWidget, QApplication, QPushButton, QVBoxLayout, QTextEdit, QLineEdit, QMessageBox
+)
 
 
 def load_ui_file(parent):
@@ -24,6 +26,7 @@ class TextFinder(QWidget):
         self.ui_find_button = self.findChild(QPushButton, name='findButton')
         self.ui_text_edit = self.findChild(QTextEdit, name='textEdit')
         self.ui_line_edit = self.findChild(QLineEdit, name='lineEdit')
+        self.found = False
 
         QMetaObject.connectSlotsByName(self)
 
@@ -58,7 +61,11 @@ class TextFinder(QWidget):
             color_format.setForeground(Qt.red)
 
             while not highlight_cursor.isNull() and not highlight_cursor.atEnd():
-                highlight_cursor = document.find(search_string, highlight_cursor, QTextDocument.FindWholeWords)
+                highlight_cursor = document.find(
+                    search_string,
+                    highlight_cursor,
+                    QTextDocument.FindWholeWords
+                )
 
                 if not highlight_cursor.isNull():
                     self.found = True
@@ -70,12 +77,12 @@ class TextFinder(QWidget):
             if not self.found:
                 QMessageBox.information(self, "Word not found", "Sorry, the word coannot be found")
 
+
 if __name__ == '__main__':
 
-    app = QApplication([])
+    APP = QApplication([])
 
-    textFinder = TextFinder()
-    textFinder.show()
+    TEXT_FINDER = TextFinder()
+    TEXT_FINDER.show()
 
-    app.exec()
-
+    APP.exec()

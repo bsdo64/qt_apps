@@ -1,6 +1,0 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource prefix="/file">
-    <file alias="textfinder.ui">textfinder.ui</file>
-    <file alias="input.txt">input.txt</file>
-</qresource>
-</RCC>

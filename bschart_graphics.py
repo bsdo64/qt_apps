@@ -5,7 +5,7 @@ import pandas as pd
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import QObject, Qt, QRectF
-from PyQt5.QtGui import QColor, QPainterPath, QPen
+from PyQt5.QtGui import QColor, QPainterPath, QPen, QTransform
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QGraphicsItem, QStyleOptionGraphicsItem, \
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, \
     QGraphicsSceneWheelEvent
@@ -80,20 +80,21 @@ class PlotItem(QGraphicsItem):
         self.data['x'] = np.arange(self.length) * count + self.delta
         self.data['y'] = (self.data['close'] - margin_min) * count_v * flip + height
 
-        # path = self.path
-        # if path is None and self.cached is False:
-        #     path = QPainterPath()
-        #     for i in np.arange(self.length - 1):
-        #         path.moveTo(self.data['x'][i], self.data['y'][i])
-        #         path.lineTo(self.data['x'][i+1], self.data['y'][i+1])
-        #
-        #     self.path = path
-        #     self.cached = True
+        path = self.path
+        if path is None and self.cached is False:
+            path = QPainterPath()
+            for i in np.arange(self.length - 1):
+                path.moveTo(self.data['x'][i], self.data['y'][i])
+                path.lineTo(self.data['x'][i+1], self.data['y'][i+1])
 
-        path = QPainterPath()
-        for i in np.arange(self.length - 1):
-            path.moveTo(self.data['x'][i], self.data['y'][i])
-            path.lineTo(self.data['x'][i+1], self.data['y'][i+1])
+            self.path = path
+            self.cached = True
+
+        path.translate(self.delta, 0)
+        # path = QPainterPath()
+        # for i in np.arange(self.length - 1):
+        #     path.moveTo(self.data['x'][i], self.data['y'][i])
+        #     path.lineTo(self.data['x'][i+1], self.data['y'][i+1])
 
         print("Timer:PlotItem() : ", (time.perf_counter() - s) * 1000)
 
@@ -106,7 +107,6 @@ class PlotItem(QGraphicsItem):
 
         painter.setPen(pen)
         painter.drawPath(path)
-
         painter.restore()
 
     def boundingRect(self):
@@ -156,7 +156,7 @@ class PlotItem(QGraphicsItem):
 
     def wheelEvent(self, event: 'QGraphicsSceneWheelEvent'):
 
-        self.delta += event.delta()
+        self.delta = event.delta()
         self.update()
 
         super().wheelEvent(event)

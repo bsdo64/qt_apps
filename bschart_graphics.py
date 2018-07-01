@@ -4,12 +4,27 @@ import numpy as np
 import pandas as pd
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import QObject, Qt, QRectF
+from PyQt5.QtCore import QObject, Qt, QRectF, QDataStream, QFile, QIODevice
 from PyQt5.QtGui import QColor, QPainterPath, QPen, QTransform
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QGraphicsItem, QStyleOptionGraphicsItem, \
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, \
     QGraphicsSceneWheelEvent
 from scipy.linalg import norm
+
+
+def perf_timer(argument, debug=True):
+    def real_decorator(fn):
+        def wrapper(*args, **kwargs):
+            if debug:
+                s = time.perf_counter()
+                result = fn(*args, **kwargs)
+                print("{} : ".format(argument), (time.perf_counter() - s) * 1000)
+            else:
+                result = fn(*args, **kwargs)
+
+            return result
+        return wrapper
+    return real_decorator
 
 
 class AxisItem(QGraphicsItem):
@@ -20,36 +35,54 @@ class AxisItem(QGraphicsItem):
         self.max = data['close'].max()
         self.min = data['close'].min()
         self.length = data['close'].size
+        self.cached = True
+        self.path = None
+
+        self.data_range_x_pix_min = 75
+        self.data_range_x_pix_max = 150
+        self.data_range_x_pix = 100
         self.setZValue(1)
 
+    @perf_timer("Timer: AxisItem::paint()")
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget=None):
         view = self.scene().views()[0]
         height = view.height()
         width = view.width()
 
-        count = float(width / self.length)
-
-        s = time.perf_counter()
         painter.save()
+        pen = QPen(QColor('#363c4e'))
+        pen.setCosmetic(True)
         path = QPainterPath()
-        for i in np.arange(self.length):
-            path.moveTo(count * i, 0)
-            path.lineTo(count * i, height)
+        for i in range(int(width / self.data_range_x_pix)):
+            path.moveTo(width - i * self.data_range_x_pix, 0)
+            path.lineTo(width - i * self.data_range_x_pix, height)
 
-        painter.setPen(QColor('#363c4e'))
+        painter.setPen(pen)
         painter.drawPath(path)
         painter.restore()
-        print("Timer:AxisItem() : ", (time.perf_counter() - s)*1000)
 
+    # @perf_timer("Timer: AxisItem::boudningRect()")
     def boundingRect(self):
         view = self.scene().views()[0]
         rect = view.rect()
 
-        return QRectF(int(rect.x()), int(rect.y()),
-                      int(rect.width()), int(rect.height()))
+        return QRectF(rect.x(), rect.y(),
+                      rect.width(), rect.height())
+
+    # @perf_timer("Timer: AxisItem::wheelEvent()")
+    def wheelEvent(self, event: 'QGraphicsSceneWheelEvent'):
+        if self.data_range_x_pix_min > self.data_range_x_pix > 0:
+            self.data_range_x_pix = self.data_range_x_pix_max
+        elif self.data_range_x_pix_max <= self.data_range_x_pix:
+            self.data_range_x_pix = self.data_range_x_pix_min
+        elif self.data_range_x_pix_min <= self.data_range_x_pix < self.data_range_x_pix_max:
+            pass
+        else:
+            self.data_range_x_pix = self.data_range_x_pix_min - 1
 
 
 class PlotItem(QGraphicsItem):
+    @perf_timer("Timer: PlotItem.__init__() : ")
     def __init__(self, data: pd.DataFrame, parent=None):
         QGraphicsItem.__init__(self, parent)
         self.setAcceptHoverEvents(True)
@@ -59,13 +92,17 @@ class PlotItem(QGraphicsItem):
         self.length = data['close'].size
         self.mouse_over = False
         self.cached = False
-        self.path = None
-        self.delta = 0
+        self.path = QPainterPath()
+        self.data_range_x_pix = 0
         self.setZValue(2)
 
-    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget=None):
+        self.create_path()
+
+    def create_path(self):
+        file = QFile('file.dat')
+        path = QPainterPath()
+
         flip = -1
-        view = self.scene().views()[0]
         height = view.height()
         width = view.width()
 
@@ -75,47 +112,57 @@ class PlotItem(QGraphicsItem):
         count = float(width / self.length)
         count_v = float(height / gap)
 
-        s = time.perf_counter()
-        painter.save()
-        self.data['x'] = np.arange(self.length) * count + self.delta
+        self.data['x'] = np.arange(self.length) * count
         self.data['y'] = (self.data['close'] - margin_min) * count_v * flip + height
 
-        path = self.path
-        if path is None and self.cached is False:
-            path = QPainterPath()
+        if not file.exists():
+
             for i in np.arange(self.length - 1):
                 path.moveTo(self.data['x'][i], self.data['y'][i])
-                path.lineTo(self.data['x'][i+1], self.data['y'][i+1])
+                path.lineTo(self.data['x'][i + 1], self.data['y'][i + 1])
 
-            self.path = path
-            self.cached = True
+            file.open(QIODevice.WriteOnly)
+            out = QDataStream(file)
+            out << path
+            file.close()
 
-        path.translate(self.delta, 0)
-        # path = QPainterPath()
-        # for i in np.arange(self.length - 1):
-        #     path.moveTo(self.data['x'][i], self.data['y'][i])
-        #     path.lineTo(self.data['x'][i+1], self.data['y'][i+1])
+        else:
+            file.open(QIODevice.ReadOnly)
+            file_in = QDataStream(file)
+            file_in >> path
+            file.close()
 
-        print("Timer:PlotItem() : ", (time.perf_counter() - s) * 1000)
+        self.path = path
+
+    @perf_timer("Timer: PlotItem::paint() ")
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget=None):
+
+        view = self.scene().views()[0]
+        painter.save()
 
         pen = QPen(Qt.white)
+        pen.setCosmetic(True)
         if self.mouse_over:
-            pen.setWidth(2)
             view.setCursor(Qt.PointingHandCursor)
         else:
             view.setCursor(Qt.ArrowCursor)
 
         painter.setPen(pen)
-        painter.drawPath(path)
+        transform = QTransform()
+        transform.scale(1 + self.data_range_x_pix / 1000, 1)
+        painter.setTransform(transform)
+        painter.drawPath(self.path)
+
         painter.restore()
 
     def boundingRect(self):
         view = self.scene().views()[0]
 
         rect = view.rect()
-        return QRectF(int(rect.x()), int(rect.y()),
-                      int(rect.width()), int(rect.height()))
+        return QRectF(rect.x(), rect.y(),
+                      rect.width(), rect.height())
 
+    @perf_timer("Timer: PlotItem::hoverMoveEvent() ")
     def hoverMoveEvent(self, event: 'QGraphicsSceneHoverEvent'):
         self.mouse_over = False
         pos = self.mapToScene(event.pos())
@@ -139,7 +186,7 @@ class PlotItem(QGraphicsItem):
             b2 = (min_pos[0] - min_pos_plus[0], min_pos[1] - min_pos_plus[1])
             b3 = (pos.x() - min_pos_plus[0], pos.y() - min_pos_plus[1])
 
-            print("dot : ", np.dot(a3, b3))
+            print("mouse distance : ", np.dot(a3, b3))
             if np.dot(a3, b3) < 1000:
 
                 # 2D distance = abs(np.cross(p2 - p1, p3 - p1) / norm(p2 - p1))
@@ -147,19 +194,12 @@ class PlotItem(QGraphicsItem):
                 min_dist2 = abs(np.cross(b2, b3) / norm(b2))
 
                 min_dist = min(min_dist1, min_dist2)
-                print("min_dist : ", min_dist)
+                print("min distance dist : ", min_dist)
                 if min_dist < 2:
                     self.mouse_over = True
                     self.update()
 
         super().hoverMoveEvent(event)
-
-    def wheelEvent(self, event: 'QGraphicsSceneWheelEvent'):
-
-        self.delta = event.delta()
-        self.update()
-
-        super().wheelEvent(event)
 
 
 class GraphScene(QGraphicsScene):
@@ -196,12 +236,25 @@ class GraphView(QGraphicsView):
 
         super().mouseMoveEvent(event)
 
+    def wheelEvent(self, event: QtGui.QWheelEvent):
+
+        items = self.items()
+        plot: PlotItem = items[0]
+        axis: AxisItem = items[1]
+
+        axis.data_range_x_pix += event.pixelDelta().x()
+        axis.update()
+
+        plot.data_range_x_pix += event.pixelDelta().x()
+        plot.update()
+
+        super().wheelEvent(event)
+
 
 if __name__ == '__main__':
     app = QApplication([])
 
     data = pd.read_pickle('bitmex_1m_2018.pkl')
-    data = data[-2160:].reset_index()
 
     plot_data = data
 

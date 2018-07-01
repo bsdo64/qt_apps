@@ -3,3 +3,4 @@ bitmex-1m-500.pkl filter=lfs diff=lfs merge=lfs -text
 bitmex_1m_2017.pkl filter=lfs diff=lfs merge=lfs -text
 bitmex-1m-500.feather filter=lfs diff=lfs merge=lfs -text
 bitmex_1m_2018.feather filter=lfs diff=lfs merge=lfs -text
+file.dat filter=lfs diff=lfs merge=lfs -text

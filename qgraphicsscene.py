@@ -2,7 +2,7 @@ import pandas
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QRectF, QRect
-from PyQt5.QtGui import QRadialGradient, QGradient, QPen, QPainterPath, QTransform
+from PyQt5.QtGui import QRadialGradient, QGradient, QPen, QPainterPath, QTransform, QPainter
 from PyQt5.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QGraphicsSceneMouseEvent, QGraphicsItem, \
     QStyleOptionGraphicsItem, QWidget, QGraphicsRectItem
 
@@ -47,21 +47,33 @@ class MyScene(QGraphicsScene):
         QGraphicsScene.__init__(self, parent)
         self.data = data
         self.rec = QGraphicsRectItem()
+        self.bounding_rect = QGraphicsRectItem()
         self.setBackgroundBrush(Qt.blue)
 
+        self.addItem(self.bounding_rect)
+
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent'):
-        # self.rec.moveBy()
-        self.rec.setRect(event.scenePos().x(), event.scenePos().y(), 10, 10)
-        print("Rect : ", self.rec.rect())
-        print(event.scenePos())
+        print()
+        print("rec pos : ", self.rec.pos())
+        print("rec rect : ", self.rec.rect())
+        print("Scene rect : ", self.sceneRect())
+        print("ItemBounding rect : ", self.itemsBoundingRect())
         item = self.itemAt(event.scenePos(), QTransform())
 
         if item and isinstance(item, MyItem):
+            print()Z
             print('haha')
+            print(self.rec.pos())
+            print(self.rec.scenePos())
             print(self.rec.collidesWithPath(item.path))
-        #     print(item.contains(event.scenePos()))
+            print(item.contains(event.scenePos()))
 
         super().mouseMoveEvent(event)
+
+    def print_bound(self, rect):
+        self.bounding_rect.setPen(QPen(Qt.green))
+        self.bounding_rect.setRect(rect.x() + 5, rect.y() + 5,
+                          rect.width() - 10, rect.height() - 10)
 
 
 class MyView(QGraphicsView):
@@ -69,10 +81,23 @@ class MyView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
         self.data = data
         self.setMouseTracking(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def wheelEvent(self, event: QtGui.QWheelEvent):
         print("pixel / Data : {}".format(self.width() / len(self.data)))
-        self.setFixedWidth(self.width() + event.angleDelta().y())
+
+    def resizeEvent(self, event: QtGui.QResizeEvent):
+        self.scene().setSceneRect(self.rect().x(), self.rect().y(),
+                          self.rect().width(), self.rect().height())
+
+        self.scene().print_bound(self.rect())
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent):
+        rec: QGraphicsRectItem = self.scene().rec
+        rec.setPos(self.mapToScene(event.pos()))
+
+        super().mouseMoveEvent(event)
 
 
 if __name__ == '__main__':
@@ -86,11 +111,11 @@ if __name__ == '__main__':
     view.show()
 
     scene.addLine(0, 0, 10, 10, QPen(Qt.white))
-    rec = QGraphicsRectItem(0, 0, 1, 1)
-    scene.addItem(rec)
+    rec = QGraphicsRectItem(-2, -2, 4, 4)
+    rec.setPen(Qt.red)
     scene.rec = rec
+    scene.addItem(rec)
 
-    scene.addRect(scene.sceneRect(), QPen(Qt.white))
     scene.addItem(MyItem(data))
 
     app.exec_()

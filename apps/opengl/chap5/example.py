@@ -1,3 +1,5 @@
+from ctypes import c_float, c_void_p
+
 from OpenGL.GL import *
 from PyQt5.QtCore import QTimer, QTime
 from PyQt5.QtGui import (
@@ -5,7 +7,6 @@ from PyQt5.QtGui import (
         QSurfaceFormat,
     )
 from PyQt5.QtWidgets import QApplication, QMainWindow, QOpenGLWidget
-from ctypes import sizeof
 import numpy as np
 import time
 
@@ -40,6 +41,21 @@ class QOpenGLControllerWidget(QOpenGLWidget):
         glBindVertexArray(self.vertex_array_object)
 
     def paintGL(self):
+
+        data = np.array([
+            0.25, -0.25, 0.5, 1.0,
+            -0.25, -0.25, 0.5, 1.0,
+            0.25, 0.25, 0.5, 1.0,
+        ])
+
+        buffer = glGenBuffers(1)
+        glBindBuffer(GL_ARRAY_BUFFER, buffer)
+        glBufferData(GL_ARRAY_BUFFER, 1024 * 1024, None, GL_STATIC_DRAW)
+
+        glBufferSubData(GL_ARRAY_BUFFER, 0, data.nbytes, data)
+
+        ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)
+        c_void_p(ptr)
 
         self._update_fps()
 

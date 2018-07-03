@@ -76,10 +76,8 @@ class MyScene(QGraphicsScene):
 
         if item and isinstance(item, MyItem):
             print()
-            print('collides path : ', self.rec.collidesWithPath(item.path))
+            print('collides path : ', self.rec.collidesWithPath(item.mapToScene(item.path)))
             print('collides item : ', self.rec.collidesWithItem(item))
-
-
 
         super().mouseMoveEvent(event)
 

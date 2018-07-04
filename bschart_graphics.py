@@ -8,7 +8,7 @@ from PyQt5.QtCore import QObject, Qt, QRectF, QDataStream, QFile, QIODevice
 from PyQt5.QtGui import QColor, QPainterPath, QPen, QTransform
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QGraphicsItem, QStyleOptionGraphicsItem, \
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QGraphicsSceneMouseEvent, QGraphicsSceneHoverEvent, \
-    QGraphicsSceneWheelEvent
+    QGraphicsSceneWheelEvent, QOpenGLWidget
 from scipy.linalg import norm
 
 
@@ -262,6 +262,7 @@ if __name__ == '__main__':
     hlayout = QHBoxLayout()
 
     view = GraphView()
+    view.setViewport(QOpenGLWidget())
     scene = GraphScene()
     view.setScene(scene)
     axis = AxisItem(data)

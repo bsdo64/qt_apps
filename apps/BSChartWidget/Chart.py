@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import Qt, QRectF, QPointF, QFile, QDataStream, QIODevice
 from PyQt5.QtGui import QPen, QColor, QMouseEvent, QBrush, QTransform, QPainter, QPainterPath
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QOpenGLWidget, QGraphicsPathItem
-
+from sys import platform
 from util import perf_timer
 
 # class ChartItem(QGraphicsPathItem):
@@ -90,14 +90,23 @@ class ChartView(QGraphicsView):
 
     @perf_timer("ChartView.wheelEvent()")
     def wheelEvent(self, event: QtGui.QWheelEvent):
-        delta_x = event.pixelDelta().x()
+        delta_x = 0
+        delta_y = 0
 
-        delta_y = event.pixelDelta().y()
+        if platform == "linux" or platform == "linux2":
+            delta_x = event.angleDelta().x()
+            delta_y = event.angleDelta().y()
+        elif platform == "darwin":
+            delta_x = event.pixelDelta().x()
+            delta_y = event.pixelDelta().y()
+        elif platform == "win32":
+            delta_x = event.angleDelta().x()
+            delta_y = event.angleDelta().y()
 
         self.trans.d_start += delta_x
         self.trans.d_range += delta_y
 
-        print(self.trans.d_start, self.trans.d_range)
+        print(self.trans.d_start, self.trans.d_range, delta_x, delta_y)
 
         super().wheelEvent(event)
 
@@ -126,6 +135,6 @@ class Chart:
         self.main_view.init_data(data)
 
     def show(self):
-        self.main_view.setViewport(QOpenGLWidget())
+        # self.main_view.setViewport(QOpenGLWidget())
         self.main_view.setRenderHint(QPainter.Antialiasing)
         self.main_view.show()

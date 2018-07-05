@@ -262,7 +262,7 @@ if __name__ == '__main__':
     hlayout = QHBoxLayout()
 
     view = GraphView()
-    view.setViewport(QOpenGLWidget())
+    # view.setViewport(QOpenGLWidget())
     scene = GraphScene()
     view.setScene(scene)
     axis = AxisItem(data)

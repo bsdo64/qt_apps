@@ -7,7 +7,7 @@ def perf_timer(argument, debug=True):
             if debug:
                 s = time.perf_counter()
                 result = fn(*args, **kwargs)
-                print("{} : ".format(argument), (time.perf_counter() - s) * 1000)
+                print("T : {} - {:.6f} ms".format(argument, (time.perf_counter() - s) * 1000))
             else:
                 result = fn(*args, **kwargs)
 

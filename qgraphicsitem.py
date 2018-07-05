@@ -4,7 +4,7 @@ import sys
 
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QPainter
-from PyQt5.QtWidgets import QGraphicsItem, QApplication, QMainWindow, QGraphicsView, QGraphicsScene
+from PyQt5.QtWidgets import QGraphicsItem, QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QOpenGLWidget
 
 
 class GraphicsItem(QGraphicsItem):
@@ -88,6 +88,7 @@ class MyMainWindow(QMainWindow):
 
         self.view = QGraphicsView()
         # set QGraphicsView attributes
+        # self.view.setViewport(QOpenGLWidget())
         self.view.setRenderHints(QtGui.QPainter.Antialiasing |
             QPainter.HighQualityAntialiasing)
         self.view.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)

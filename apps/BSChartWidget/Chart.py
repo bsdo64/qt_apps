@@ -35,8 +35,8 @@ class ChartView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
 
         self.setMouseTracking(True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QColor('#131722'))
         self.setMinimumSize(400, 400)
         self.setFrameStyle(self.NoFrame)
@@ -45,7 +45,7 @@ class ChartView(QGraphicsView):
         self.trans = ChartTransform()
         self.path = None
 
-    @perf_timer("T : ChartView.init_data()")
+    @perf_timer("ChartView.init_data()")
     def init_data(self, data: pandas.DataFrame):
         self.data = data
         self.make_path()
@@ -54,13 +54,16 @@ class ChartView(QGraphicsView):
         file = QFile('sample.dat')
         path = QPainterPath()
 
+        series = self.data['close'] - self.data['close'].min()
+
+        print(series)
         if file.exists():
             file.open(QIODevice.ReadOnly)
             file_in = QDataStream(file)
             file_in >> path
             file.close()
         else:
-            series = -(self.data['close'] - self.data['close'].min())
+
             for i in range(len(self.data) - 1):
                 path.moveTo(QPointF(i, series[i]))
                 path.lineTo(QPointF(i+1, series[i+1]))
@@ -77,7 +80,7 @@ class ChartView(QGraphicsView):
         plot.setPen(pen)
         self.scene().addItem(plot)
 
-    @perf_timer("T : ChartView.mouseMoveEvent()", False)
+    @perf_timer("ChartView.mouseMoveEvent()", False)
     def mouseMoveEvent(self, event: QMouseEvent):
         print()
         print(event.pos())
@@ -85,10 +88,10 @@ class ChartView(QGraphicsView):
 
         super().mouseMoveEvent(event)
 
-    @perf_timer("T : ChartView.wheelEvent()")
+    @perf_timer("ChartView.wheelEvent()")
     def wheelEvent(self, event: QtGui.QWheelEvent):
-
         delta_x = event.pixelDelta().x()
+
         delta_y = event.pixelDelta().y()
 
         self.trans.d_start += delta_x
@@ -98,14 +101,17 @@ class ChartView(QGraphicsView):
 
         super().wheelEvent(event)
 
-    @perf_timer("T : ChartView.resizeEvent()")
+    @perf_timer("ChartView.resizeEvent()")
     def resizeEvent(self, event: QtGui.QResizeEvent):
 
-        plot: QGraphicsPathItem = self.scene().items()[0]
-        trans = QTransform()
-        trans.scale(self.width() / (len(self.data) + 1),
-                    self.height() / (self.data['close'].max() - self.data['close'].min() + 1))
-        plot.setTransform(trans)
+        self.setSceneRect(0, 0,
+                          self.width(), self.height())
+
+        # plot: QGraphicsPathItem = self.scene().items()[0]
+        # trans = QTransform()
+        # trans.scale(self.width() / (len(self.data) + 1),
+        #             self.height() / (self.data['close'].max() - self.data['close'].min() + 1))
+        # plot.setTransform(trans)
 
         super().resizeEvent(event)
 
@@ -120,6 +126,6 @@ class Chart:
         self.main_view.init_data(data)
 
     def show(self):
-        # self.main_view.setViewport(QOpenGLWidget())
+        self.main_view.setViewport(QOpenGLWidget())
         self.main_view.setRenderHint(QPainter.Antialiasing)
         self.main_view.show()

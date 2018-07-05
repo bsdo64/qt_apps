@@ -1,4 +1,5 @@
 import datetime
+import os
 
 import dateutil
 from PyQt5.QtCore import QTimer, Qt, QThread, QCoreApplication
@@ -83,20 +84,29 @@ class Requester:
     def check_current_data(self):
         now = datetime.datetime.now()
         total_min = 525600 # 1 - year
+        filename = 'bitmex_1m_{}.pkl'.format(now.year)
 
-        df = pd.read_pickle('bitmex_1m_{}.pkl'.format(now.year))
-        last_time = df['timestamp'][df.shape[0] - 1]
-        expect_last_time = datetime.datetime(now.year, 1, 1, tzinfo=datetime.timezone.utc) + \
-                     datetime.timedelta(minutes=df.shape[0] - 1)
+        if os.path.isfile(filename):
 
-        if expect_last_time == dateutil.parser.parse(last_time):
-            start_from = df.shape[0] + total_min * (now.year - 2017)
+            df = pd.read_pickle('bitmex_1m_{}.pkl'.format(now.year))
+            last_time = df['timestamp'][df.shape[0] - 1]
+            expect_last_time = datetime.datetime(now.year, 1, 1, tzinfo=datetime.timezone.utc) + \
+                         datetime.timedelta(minutes=df.shape[0] - 1)
+
+            if expect_last_time == dateutil.parser.parse(last_time):
+                start_from = df.shape[0] + total_min * (now.year - 2017)
+                print("Now : ", now)
+                print("Last time : ", last_time)
+                print("Start from ...{}".format(start_from))
+                print()
+            else:
+                raise Exception("Not correct expected last time")
+        else:
+            df = pd.DataFrame()
+            start_from = total_min * (now.year - 2017)
             print("Now : ", now)
-            print("Last time : ", last_time)
             print("Start from ...{}".format(start_from))
             print()
-        else:
-            raise Exception("Not correct expected last time")
 
         return start_from, df
 

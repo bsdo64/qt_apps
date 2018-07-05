@@ -1,14 +1,48 @@
 import pandas
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import Qt, QRectF, QPointF, QFile, QDataStream, QIODevice
-from PyQt5.QtGui import QPen, QColor, QMouseEvent, QBrush, QTransform, QPainter, QPainterPath
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QOpenGLWidget, QGraphicsPathItem
+import numpy as np
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt, QRectF, QFile, QDataStream, QIODevice
+from PyQt5.QtGui import QPen, QColor, QMouseEvent, QPainter, QPainterPath
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, \
+    QGraphicsItem, QStyleOptionGraphicsItem
 from sys import platform
 from util import perf_timer
 
-# class ChartItem(QGraphicsPathItem):
-#     def __init__(self, parent=None):
-#         QGraphicsPathItem.__init__(self, parent)
+
+class ChartItem(QGraphicsItem):
+    def __init__(self, path, trans, data, parent=None):
+        QGraphicsItem.__init__(self, parent)
+
+        self.path:  QPainterPath = path
+        self.trans: ChartTransform = trans
+        self.data:  pandas.DataFrame = data
+
+    @perf_timer("Timer: PlotItem::paint() ")
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget=None):
+
+        painter.save()
+
+        pen = QPen(Qt.white)
+        pen.setCosmetic(True)
+
+        df = self.data[-self.trans.d_range:]
+        y_ratio = 1.5
+        trans = painter.transform()
+        trans.translate(-620 * y_ratio, 300 * y_ratio)
+        trans.scale(1, y_ratio)
+
+        painter.setTransform(trans)
+        painter.setPen(pen)
+        painter.drawPath(self.path)
+
+        painter.restore()
+
+    def boundingRect(self):
+        view = self.scene().views()[0]
+
+        rect = view.rect()
+        return QRectF(rect.x(), rect.y(),
+                      rect.width(), rect.height())
 
 #
 # class ChartScene(QGraphicsScene):
@@ -23,11 +57,12 @@ class ChartTransform:
         # data range
         self.d_range = 100
         # data range per pixel (d_range / pixel)
-        self.tick_range = 3
         self.x_marker_size: float = None
         self.y_marker_size: float = None
         self.gap: float = None
         self.width = 5
+        self.view_width = 640
+        self.view_height = 480
 
 
 class ChartView(QGraphicsView):
@@ -35,50 +70,58 @@ class ChartView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
 
         self.setMouseTracking(True)
-        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QColor('#131722'))
-        self.setMinimumSize(400, 400)
+        self.setMinimumSize(640, 480)
         self.setFrameStyle(self.NoFrame)
 
-        self.data: pandas.DataFrame = None
         self.trans = ChartTransform()
+        self.data: pandas.DataFrame = None
         self.path = None
 
     @perf_timer("ChartView.init_data()")
     def init_data(self, data: pandas.DataFrame):
         self.data = data
-        self.make_path()
+        self.add_plot()
 
-    def make_path(self):
+    def add_plot(self):
         file = QFile('sample.dat')
         path = QPainterPath()
 
-        series = self.data['close'] - self.data['close'].min()
+        flip = -1
+        height = self.height()
+        width = self.width()
 
-        print(series)
-        if file.exists():
-            file.open(QIODevice.ReadOnly)
-            file_in = QDataStream(file)
-            file_in >> path
-            file.close()
-        else:
+        margin_max = self.data['close'].max() + 10
+        margin_min = self.data['close'].min() - 10
+        gap = margin_max - margin_min
+        count = float(width / len(self.data))
+        count_v = float(height / gap)
 
-            for i in range(len(self.data) - 1):
-                path.moveTo(QPointF(i, series[i]))
-                path.lineTo(QPointF(i+1, series[i+1]))
+        self.data['x'] = np.arange(len(self.data)) * count
+        self.data['y'] = (self.data['close'] - margin_min) * count_v * flip + height
+
+        if not file.exists():
+
+            path.moveTo(self.data['x'][0], self.data['y'][0])
+            for i in np.arange(len(self.data) - 1):
+                path.lineTo(self.data['x'][i + 1], self.data['y'][i + 1])
 
             file.open(QIODevice.WriteOnly)
             out = QDataStream(file)
             out << path
             file.close()
 
+        else:
+            file.open(QIODevice.ReadOnly)
+            file_in = QDataStream(file)
+            file_in >> path
+            file.close()
+
         self.path = path
-        plot = QGraphicsPathItem(path)
-        pen = QPen(Qt.gray)
-        pen.setCosmetic(True)
-        plot.setPen(pen)
-        self.scene().addItem(plot)
+        plot_item = ChartItem(path, self.trans, self.data)
+        self.scene().addItem(plot_item)
 
     @perf_timer("ChartView.mouseMoveEvent()", False)
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -106,7 +149,16 @@ class ChartView(QGraphicsView):
         self.trans.d_start += delta_x
         self.trans.d_range += delta_y
 
-        print(self.trans.d_start, self.trans.d_range, delta_x, delta_y)
+        # plot: QGraphicsItem = self.scene().items()[0]
+        # trans = plot.transform()
+        # trans.translate(delta_x, 0)
+        # # trans.scale(1 + delta_y / 1000, 1 + delta_y / 1000)
+        # plot.setTransform(trans)
+        #
+        # print(trans.dx(), trans.dy())
+
+        for item in self.scene().items():
+            item.update()
 
         super().wheelEvent(event)
 
@@ -116,11 +168,8 @@ class ChartView(QGraphicsView):
         self.setSceneRect(0, 0,
                           self.width(), self.height())
 
-        # plot: QGraphicsPathItem = self.scene().items()[0]
-        # trans = QTransform()
-        # trans.scale(self.width() / (len(self.data) + 1),
-        #             self.height() / (self.data['close'].max() - self.data['close'].min() + 1))
-        # plot.setTransform(trans)
+        self.trans.view_width = self.width()
+        self.trans.view_height = self.height()
 
         super().resizeEvent(event)
 

@@ -7,7 +7,7 @@ class App:
     def __init__(self):
         data = pd.read_pickle('../../bitmex_1m_2018.pkl')
         self.app = QApplication([])
-        self.chart = Chart(data=data[-100:].reset_index())
+        self.chart = Chart(data=data)
 
     def start(self):
         print('App started!')

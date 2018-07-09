@@ -10,28 +10,20 @@ from util import perf_timer
 
 
 class ChartItem(QGraphicsItem):
-    def __init__(self, path, trans, data, parent=None):
+    def __init__(self, path, trans, parent=None):
         QGraphicsItem.__init__(self, parent)
 
-        self.path:  QPainterPath = path
-        self.trans: ChartTransform = trans
-        self.data:  pandas.DataFrame = data
+        self.path = path
+        self.trans = trans
 
     @perf_timer("Timer: PlotItem::paint() ")
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget=None):
 
+        print(self.trans)
         painter.save()
 
         pen = QPen(Qt.white)
         pen.setCosmetic(True)
-
-        df = self.data[-self.trans.d_range:]
-        y_ratio = 1.5
-        trans = painter.transform()
-        trans.translate(-620 * y_ratio, 300 * y_ratio)
-        trans.scale(1, y_ratio)
-
-        painter.setTransform(trans)
         painter.setPen(pen)
         painter.drawPath(self.path)
 
@@ -61,8 +53,6 @@ class ChartTransform:
         self.y_marker_size: float = None
         self.gap: float = None
         self.width = 5
-        self.view_width = 640
-        self.view_height = 480
 
     def moving_x(self, delta_x):
         if self.d_start > 0:
@@ -107,10 +97,10 @@ class ChartView(QGraphicsView):
         QGraphicsView.__init__(self, parent)
 
         self.setMouseTracking(True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QColor('#131722'))
-        self.setMinimumSize(640, 480)
+        self.setMinimumSize(400, 400)
         self.setFrameStyle(self.NoFrame)
 
         self.trans = ChartTransform()
@@ -188,16 +178,13 @@ class ChartView(QGraphicsView):
         self.trans.moving_x(delta_x)
         self.trans.moving_range(delta_y)
 
-        # plot: QGraphicsItem = self.scene().items()[0]
-        # trans = plot.transform()
-        # trans.translate(delta_x, 0)
-        # # trans.scale(1 + delta_y / 1000, 1 + delta_y / 1000)
-        # plot.setTransform(trans)
-        #
-        # print(trans.dx(), trans.dy())
+        plot: QGraphicsItem = self.scene().items()[0]
+        trans = plot.transform()
+        trans.translate(delta_x, 0)
+        trans.scale(1 + delta_y / 1000, 1 + delta_y / 1000)
+        plot.setTransform(trans)
 
-        for item in self.scene().items():
-            item.update()
+        print(trans.dx(), trans.dy())
 
         super().wheelEvent(event)
 
@@ -206,9 +193,6 @@ class ChartView(QGraphicsView):
 
         self.setSceneRect(0, 0,
                           self.width(), self.height())
-
-        self.trans.view_width = self.width()
-        self.trans.view_height = self.height()
 
         super().resizeEvent(event)
 

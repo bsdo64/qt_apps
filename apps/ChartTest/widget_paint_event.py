@@ -5,11 +5,11 @@ from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QPainter, QPen, QPainterPath, QPixmap
 
 from PyQt5.QtWidgets import QApplication, QWidget, QGraphicsItem, QStyleOptionGraphicsItem, QGraphicsView, \
-    QGraphicsScene
+    QGraphicsScene, QGraphicsPathItem, QGraphicsSceneHoverEvent
 from util import perf_timer
 
 
-data_range = 100000
+data_range = 10000
 width = 640
 height = 480
 
@@ -149,25 +149,80 @@ class MyGraphicsItem(QGraphicsItem):
             self.path.lineTo(self.df['x'][i] + self.df['width'][i], self.df['y'][i] + self.df['height'][i])
             self.path.lineTo(self.df['x'][i], self.df['y'][i])
 
+    @perf_timer("MyGraphicsItem.paint()")
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget: QWidget = ...):
         painter.drawPath(self.path)
 
     def boundingRect(self):
-        return self.shape().boundingRect()
+        return QRectF(0, 0, 640, 480)
 
+
+class MyGraphicsItem2(QGraphicsItem):
+    def __init__(self, parent=None):
+        QGraphicsItem.__init__(self, parent)
+        self.df = pd.read_pickle('../../bitmex_1m_2018.pkl')
+
+        self.path = QPainterPath()
+        for i in range(data_range):
+            self.path.addRect(i / width, self.df['open'][i] / height,
+                              10, self.df['open'][i] - self.df['close'][i])
+
+    @perf_timer("MyGraphicsItem.paint()")
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget: QWidget = ...):
+        pen = QPen()
+        pen.setCosmetic(True)
+        pen.setColor(Qt.green)
+        painter.setPen(pen)
+        painter.drawPath(self.path)
+
+    def boundingRect(self):
+        return QRectF(0, 0, 640, 480)
+
+
+df = pd.read_pickle('../../bitmex_1m_2018.pkl')
+
+path = QPainterPath()
+for i in range(data_range):
+    path.addRect(i / width, df['open'][i] / height,
+                 10, df['open'][i] - df['close'][i])
+
+MyGraphicsItem3 = QGraphicsPathItem(path)
+perf_timer("painter")(MyGraphicsItem3.paint)
+
+
+class MyGraphicsItem4(QGraphicsItem):
+    def __init__(self, parent=None):
+        QGraphicsItem.__init__(self, parent)
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.ItemIsFocusable, True)
+
+        self.setAcceptHoverEvents(True)
+
+    @perf_timer("painter")
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget: QWidget= ...):
+        painter.fillPath(path, Qt.green)
+
+    def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent'):
+        self.setCursor(Qt.PointingHandCursor)
 
 if __name__ == '__main__':
     app = QApplication([])
 
-    # win = MyWidget()  # 600 ms
-    # win = MyWidget2() # 6000 ms
-    # win = MyWidget3() # 1600 ms
-    # win = MyWidget4() # 48000 ms
-    # win = MyWidget5() # 700 ms
+    win = MyWidget()  # 400 ms
+    # win = MyWidget2() # 4187 ms
+    # win = MyWidget3() # 722 ms
+    # win = MyWidget4() # 6250 ms
+    # win = MyWidget5() # ~ 400 ms
 
     win = QGraphicsView()
     scene = QGraphicsScene()
-    win.setScene(QGraphicsScene())
+    # scene.addItem(MyGraphicsItem())
+    # scene.addItem(MyGraphicsItem2())
+    # scene.addItem(MyGraphicsItem3)
+    scene.addItem(MyGraphicsItem4())
+    win.setScene(scene) # 400 ms
+
     print('init success')
     win.resize(width, height)
     win.show()

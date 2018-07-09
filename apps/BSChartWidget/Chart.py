@@ -1,10 +1,10 @@
 import pandas
 import numpy as np
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt, QRectF, QFile, QDataStream, QIODevice
 from PyQt5.QtGui import QPen, QColor, QMouseEvent, QPainter, QPainterPath
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, \
-    QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QOpenGLWidget
+    QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QOpenGLWidget, QApplication
 from sys import platform
 from util import perf_timer
 
@@ -16,10 +16,8 @@ class ChartItem(QGraphicsItem):
         self.path = path
         self.trans = trans
 
-    @perf_timer("Timer: PlotItem::paint() ")
+    @perf_timer("ChartItem::paint()")
     def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget=None):
-
-        print(self.trans)
         painter.save()
 
         pen = QPen(Qt.white)
@@ -96,7 +94,7 @@ class ChartView(QGraphicsView):
     def __init__(self, parent=None):
         QGraphicsView.__init__(self, parent)
 
-        self.setMouseTracking(True)
+        # self.setMouseTracking(True)
         # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setBackgroundBrush(QColor('#131722'))
@@ -147,10 +145,10 @@ class ChartView(QGraphicsView):
             file.close()
 
         self.path = path
-        plot_item = ChartItem(path, self.trans, self.data)
-        # self.scene().addItem(plot_item)
-        rect_item = MyRectItem(self.trans)
-        self.scene().addItem(rect_item)
+        plot_item = ChartItem(path, self.trans)
+        self.scene().addItem(plot_item)
+        # rect_item = MyRectItem(self.trans)
+        # self.scene().addItem(rect_item)
 
     @perf_timer("ChartView.mouseMoveEvent()", False)
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -158,7 +156,26 @@ class ChartView(QGraphicsView):
         print(event.pos())
         print(self.mapToScene(event.pos()))
 
+        # if (not event.button()) & Qt.LeftButton:
+        #     return
+
+        if (event.pos() - self.dragStartPosition).manhattanLength() < QApplication.startDragDistance():
+            return
+
+        plot: QGraphicsItem = self.scene().items()[0]
+        trans = plot.transform()
+
+        delta = event.pos() - self.dragStartPosition
+        scale = trans.m11()
+        trans.translate(-delta.x() / scale ** 2, -delta.y() / scale ** 2)
+        plot.setTransform(trans)
+
         super().mouseMoveEvent(event)
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self.dragStartPosition = event.pos()
+
 
     @perf_timer("ChartView.wheelEvent()")
     def wheelEvent(self, event: QtGui.QWheelEvent):
@@ -181,10 +198,14 @@ class ChartView(QGraphicsView):
         plot: QGraphicsItem = self.scene().items()[0]
         trans = plot.transform()
         trans.translate(delta_x, 0)
-        trans.scale(1 + delta_y / 1000, 1 + delta_y / 1000)
+        scale_x, scale_y = trans.m11(), trans.m22()
+        print(scale_x, scale_y)
+        trans.scale(1 + delta_y / scale_x / 100, 1 + delta_y / scale_y / 100)
         plot.setTransform(trans)
 
-        print(trans.dx(), trans.dy())
+        print(trans.m11(), trans.m12(), trans.m13())
+        print(trans.m21(), trans.m22(), trans.m23())
+        print(trans.m31(), trans.m32(), trans.m33())
 
         super().wheelEvent(event)
 

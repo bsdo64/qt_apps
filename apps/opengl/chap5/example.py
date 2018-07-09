@@ -85,7 +85,7 @@ class QOpenGLControllerWidget(QOpenGLWidget):
         glVertexAttrib4fv(0, offset)
         glVertexAttrib4fv(1, color)
 
-        glDrawArrays(GL_TRIANGLES, 0, 3)
+        glDrawArrays(GL_LINE_LOOP, 0, 3)
 
     def resizeGL(self, w, h):
         """Resize viewport to match widget dimensions."""

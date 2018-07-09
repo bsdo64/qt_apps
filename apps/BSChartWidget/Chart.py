@@ -4,7 +4,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QRectF, QFile, QDataStream, QIODevice
 from PyQt5.QtGui import QPen, QColor, QMouseEvent, QPainter, QPainterPath
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, \
-    QGraphicsItem, QStyleOptionGraphicsItem
+    QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QOpenGLWidget
 from sys import platform
 from util import perf_timer
 
@@ -64,6 +64,43 @@ class ChartTransform:
         self.view_width = 640
         self.view_height = 480
 
+    def moving_x(self, delta_x):
+        if self.d_start > 0:
+            self.d_start += delta_x
+
+    def moving_range(self, delta_y):
+        if self.d_range > 0 and self.d_range + delta_y > 0:
+            self.d_range += delta_y
+
+
+class MyRectItem(QGraphicsItem):
+    def __init__(self, trans, parent=None):
+        QGraphicsItem.__init__(self, parent)
+        self.trans = trans
+
+    @perf_timer("MyRectItem.paint()")
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget: QWidget=None):
+        path = QPainterPath()
+        m = self.trans.d_range
+        gap = self.trans.view_width / m
+        max_height = 80
+        print(m)
+
+        df = pandas.DataFrame({'x': np.arange(m) * self.trans.view_width / m,
+                               'y': np.random.random_sample(m) * (self.trans.view_height - max_height), 'width': 1,
+                               'height': np.random.random_sample(m) * max_height})
+
+        for i in np.arange(len(df)):
+            path.addRect(QRectF(df['x'][i], df['y'][i], 1, df['height'][i]))
+            # color = QColor()
+            # color.setRgbF(i / m, i / m, i / m, 1)
+            # painter.fillRect(QRectF(i / m * 640, i / m * 480, (i + 10) / m * 640, (i + 10) / m * 480), color)
+
+        painter.drawPath(path)
+
+    def boundingRect(self):
+        return QRectF(0, 0, 640, 480)
+
 
 class ChartView(QGraphicsView):
     def __init__(self, parent=None):
@@ -121,7 +158,9 @@ class ChartView(QGraphicsView):
 
         self.path = path
         plot_item = ChartItem(path, self.trans, self.data)
-        self.scene().addItem(plot_item)
+        # self.scene().addItem(plot_item)
+        rect_item = MyRectItem(self.trans)
+        self.scene().addItem(rect_item)
 
     @perf_timer("ChartView.mouseMoveEvent()", False)
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -146,8 +185,8 @@ class ChartView(QGraphicsView):
             delta_x = event.angleDelta().x()
             delta_y = event.angleDelta().y()
 
-        self.trans.d_start += delta_x
-        self.trans.d_range += delta_y
+        self.trans.moving_x(delta_x)
+        self.trans.moving_range(delta_y)
 
         # plot: QGraphicsItem = self.scene().items()[0]
         # trans = plot.transform()
@@ -184,6 +223,6 @@ class Chart:
         self.main_view.init_data(data)
 
     def show(self):
-        # self.main_view.setViewport(QOpenGLWidget())
+        self.main_view.setViewport(QOpenGLWidget())
         self.main_view.setRenderHint(QPainter.Antialiasing)
         self.main_view.show()

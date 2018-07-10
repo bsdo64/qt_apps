@@ -1,7 +1,7 @@
 import pandas
 import numpy as np
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt, QRectF, QFile, QDataStream, QIODevice
+from PyQt5.QtCore import Qt, QRectF, QFile, QDataStream, QIODevice, QPoint
 from PyQt5.QtGui import QPen, QColor, QMouseEvent, QPainter, QPainterPath
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, \
     QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QOpenGLWidget, QApplication
@@ -174,7 +174,7 @@ class ChartView(QGraphicsView):
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
         if event.button() == Qt.LeftButton:
-            self.dragStartPosition = event.pos()
+            self.dragStartPosition: QPoint = event.pos()
 
 
     @perf_timer("ChartView.wheelEvent()")

@@ -1,0 +1,20 @@
+from PyQt5 import QtGui
+from PyQt5.QtCore import QRectF
+from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
+
+from util import perf_timer
+
+
+class SceneRectItem(QGraphicsItem):
+    def __init__(self, parent=None):
+        QGraphicsItem.__init__(self, parent)
+
+    @perf_timer("SceneRectItem.paint()")
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget: QWidget = ...):
+        scene = self.scene()
+        rect = scene.sceneRect()
+
+        painter.drawRect(rect)
+
+    def boundingRect(self):
+        return QRectF(0, 0, 100, 100)

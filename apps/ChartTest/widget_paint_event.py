@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import pyqtgraph
+
 from PyQt5 import QtGui
 from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QPainter, QPen, QPainterPath, QPixmap
@@ -205,6 +207,7 @@ class MyGraphicsItem4(QGraphicsItem):
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent'):
         self.setCursor(Qt.PointingHandCursor)
+
 
 if __name__ == '__main__':
     app = QApplication([])

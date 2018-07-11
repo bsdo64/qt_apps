@@ -6,11 +6,51 @@ from layouts.panes import ChartPane, ChartTimePane
 
 
 class ChartLayoutManager:
-    def __init__(self):
-        self.panes = [ChartPane(ChartView(), ChartAxisView())]
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.chart_panes = [
+            ChartPane(ChartView(), ChartAxisView()),
+        ]
+        self.time_axis_pane = ChartTimePane(TimeAxisView())
 
-    def add_pane(self, pane):
-        self.panes.append(pane)
+        self.splitter = QSplitter(parent)
+        self.splitter.setOrientation(Qt.Vertical)
+        self.splitter.setChildrenCollapsible(False)
+        self.splitter.setHandleWidth(2)
+        self.splitter.setContentsMargins(0, 0, 0, 0)
+
+        self.init_layout()
+
+    def init_layout(self):
+        # init chart panes
+        for pane in self.chart_panes:
+            self.splitter.addWidget(pane.create(self.parent))
+
+    def del_last_pane(self):
+        count = self.splitter.count()
+        if count > 1:
+            self.chart_panes.pop(count - 1)
+            self.splitter.widget(count - 1).deleteLater()
+
+    def del_pane(self, index):
+        if index == 0:
+            return False
+
+        self.chart_panes.pop(index)
+        self.splitter.widget(index).deleteLater()
+
+    def add_pane(self, pane=None):
+        if not pane:
+            pane = ChartPane(ChartView(), ChartAxisView())
+
+        self.chart_panes.append(pane)
+        self.splitter.addWidget(pane.create(self.parent))
+
+    def get_panes(self) -> QSplitter:
+        return self.splitter
+
+    def get_time_axis(self) -> QWidget:
+        return self.time_axis_pane.create(self.parent)
 
 
 class BSChart(QWidget):
@@ -20,18 +60,10 @@ class BSChart(QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
 
-        self.layout_manager = ChartLayoutManager()
         self.vbox = QVBoxLayout(self)
         self.vbox.setSpacing(1)
         self.vbox.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter(self)
-        splitter.setOrientation(Qt.Vertical)
-        splitter.setHandleWidth(2)
-
-        splitter.addWidget(ChartPane(ChartView(), ChartAxisView()).create())
-        splitter.addWidget(ChartView())
-
-        self.vbox.addWidget(splitter)
-        self.vbox.addWidget(ChartTimePane(TimeAxisView()).create())
-
+        self.layout = ChartLayoutManager(self)
+        self.vbox.addWidget(self.layout.get_panes())
+        self.vbox.addWidget(self.layout.get_time_axis())

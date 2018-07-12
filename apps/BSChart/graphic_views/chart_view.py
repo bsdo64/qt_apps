@@ -1,10 +1,40 @@
-from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen, QTransform
-from PyQt5.QtWidgets import QGraphicsView, QSizePolicy
+import typing
 
+import pandas
+
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import QPen, QPainterPath
+from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+
+from data.model import Model
 from graphic_items import SceneRectItem, CustomRectsItem
 from graphic_scenes.chart_scene import ChartScene
+
+
+class CandleStickItem(QGraphicsItem):
+    def __init__(self, model, parent=None):
+        QGraphicsItem.__init__(self, parent)
+        self.model = model
+
+    def paint(self, painter: QtGui.QPainter, option: 'QStyleOptionGraphicsItem', widget: typing.Optional[QWidget] = ...):
+        data = self.model.series[-100:]
+
+        painter.save()
+        painter.setRenderHint(painter.Antialiasing)
+        pen = QPen()
+        pen.setCosmetic(True)
+
+        painter.setPen(pen)
+        path = QPainterPath()
+        path.moveTo(0, 0)
+        path.lineTo(100, 100)
+
+        painter.drawPath(path)
+        painter.restore()
+
+    def boundingRect(self):
+        return QRectF(0, 0, 100, 100)
 
 
 class ChartView(QGraphicsView):
@@ -17,10 +47,10 @@ class ChartView(QGraphicsView):
         # self.setRenderHint(QPainter.Antialiasing)
         # self.setFrameStyle(QFrame.NoFrame)
 
-        pen = QPen()
-        pen.setCosmetic(True)
+        self.model = Model(pandas.read_pickle('../../bitmex_1m_2018.pkl'))
 
         scene = ChartScene()
+        scene.addItem(CandleStickItem(self.model))
         scene.addItem(SceneRectItem())
         scene.addItem(CustomRectsItem())
         self.setScene(scene)
@@ -42,5 +72,5 @@ class ChartView(QGraphicsView):
         delta = new_pos - old_pos
         # print(delta)
         # self.translate(delta.x(), delta.y())
-        # super().wheelEvent(event)
-        # print(event.angleDelta())
+        super().wheelEvent(event)
+

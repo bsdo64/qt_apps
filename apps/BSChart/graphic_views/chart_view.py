@@ -1,4 +1,5 @@
 import typing
+from sys import platform
 
 import pandas
 
@@ -91,6 +92,14 @@ class ChartView(QGraphicsView):
         # delta = new_pos - old_pos
         # print(delta)
         # self.translate(delta.x(), delta.y())
-        self.model.add_range(event.pixelDelta().y())
+
+        if platform == "darwin":
+            delta_x = event.pixelDelta().x()
+            delta_y = event.pixelDelta().y()
+        else:
+            delta_x = event.angleDelta().x()
+            delta_y = event.angleDelta().y()
+
+        self.model.add_range(delta_y)
         self.candlestick.update()
 

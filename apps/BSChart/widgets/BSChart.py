@@ -27,7 +27,7 @@ class ChartLayoutManager:
         for pane in self.chart_panes:
             self.splitter.addWidget(pane.create(self.parent))
 
-    def del_last_pane(self):
+    def del_last_pane(self, checked=False):
         count = self.splitter.count()
         if count > 1:
             self.chart_panes.pop(count - 1)

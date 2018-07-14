@@ -35,7 +35,7 @@ def perf_timer(argument, debug=True, limit=1):
     return real_decorator
 
 
-def attach_timer(cls, limit=5):
+def attach_timer(cls, limit=0):
     parent = cls.mro()[1]
     diff_method = set(dir(cls)) - set(dir(parent))
     method_list = [

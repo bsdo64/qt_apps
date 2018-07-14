@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QSizePolicy, QVBoxLayout, QSplitter
 
 from graphic_views import ChartAxisView, ChartView, TimeAxisView
 from layouts.panes import ChartPane, ChartTimePane
+from utils import attach_timer
 
 
 class ChartLayoutManager:
@@ -53,6 +54,9 @@ class ChartLayoutManager:
         return self.time_axis_pane.create(self.parent)
 
 
+attach_timer(ChartLayoutManager)
+
+
 class BSChart(QWidget):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
@@ -67,3 +71,6 @@ class BSChart(QWidget):
         self.layout = ChartLayoutManager(self)
         self.vbox.addWidget(self.layout.get_panes())
         self.vbox.addWidget(self.layout.get_time_axis())
+
+
+attach_timer(BSChart)

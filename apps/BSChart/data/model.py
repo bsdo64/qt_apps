@@ -1,26 +1,49 @@
+import time
+
 import pandas as pd
 from PyQt5.QtCore import QRectF, QRect
+from PyQt5.QtGui import QTransform
 from PyQt5.QtWidgets import QGraphicsView
+
+from utils import attach_timer
 
 
 class Model:
     def __init__(self,
                  data: pd.DataFrame,
                  view: QGraphicsView):
-        data['timestamp'] = data['timestamp'].astype('datetime64')
-        data['time_axis'] = data['timestamp'].astype('int64') // 10 ** 9 // 60
 
         self.series = data
-        data_length = len(data)
+        self._init_printing_data()
         self.axis_width = 100
+        self.default_data_size = 1000
+        self.next_data_size = 500
         self.view = view
         self.marker_gap = 30
         self.scale_factor = 1
 
-    def data(self) -> pd.DataFrame:
-        return self.series[-int(1 + self.axis_width / self.view.width()):]
+    def _init_printing_data(self):
+        self.series['timestamp'] = self.series['timestamp'].astype('datetime64')
+        self.series['time_axis'] = self.series['timestamp'].astype('int64') // 10 ** 9 // 60
 
-    # def
+        for i in ['close', 'open', 'low', 'high']:
+            m = self.series[i].max()
+            self.series['n_' + i] = m - self.series[i]
+
+    def data(self) -> pd.DataFrame:
+        data = self.series[-int(self.default_data_size + self.axis_width / self.view.width()):]
+
+        return data
+
+    def next_data(self, data_range=None):
+        next_data_size = data_range or self.next_data_size
+        v = int(self.default_data_size + self.axis_width / self.view.width()) // next_data_size - 2
+        return self.series[-(self.default_data_size + next_data_size * (v+1)):-(self.default_data_size + next_data_size * v)]
+
+    def scale(self):
+        data_range = int(1000 + self.axis_width / self.view.width())
+        scale_x = self.view.width() / data_range
+        return scale_x, 1
 
     def set_range(self, data_range):
         self.axis_width = data_range
@@ -36,13 +59,15 @@ class Model:
             self.axis_width += factor
 
         model_data = self.data()
-        rect = QRectF(model_data['time_axis'].min(),
-                      model_data['open'].min(),
-                      len(model_data),
-                      model_data['open'].max() - model_data['close'].min())
 
-        trans = self.view.transform()
-        self.scale_factor = (self.view.width() / self.axis_width)
-        # self.view.scale(scale_x, 1)
+        trans = QTransform()
+        trans.scale(*self.scale())
+        self.view.setTransform(trans)
 
-        self.view.setSceneRect(rect)
+        self.view.scene().setSceneRect(QRectF(model_data['time_axis'].min(),
+                      model_data['n_open'].min(),
+                      len(model_data) - 5,
+                      model_data['n_open'].max() - model_data['n_close'].min())) # update scene rect
+
+
+attach_timer(Model)

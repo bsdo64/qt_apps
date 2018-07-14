@@ -10,7 +10,6 @@ class SceneRectItem(QGraphicsItem):
     def __init__(self, parent=None):
         QGraphicsItem.__init__(self, parent)
 
-    @perf_timer("SceneRectItem.paint()", False)
     def paint(self, painter: QtGui.QPainter,
               option: 'QStyleOptionGraphicsItem',
               widget: QWidget = ...):

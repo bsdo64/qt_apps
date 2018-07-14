@@ -15,7 +15,6 @@ class CustomRectsItem(QGraphicsItem):
         self.path = QPainterPath()
         self.data_size = 1000
 
-    @perf_timer("CustomRectsItem.paint()", False)
     def paint(self,
               painter: QtGui.QPainter,
               option: 'QStyleOptionGraphicsItem',

@@ -31,7 +31,7 @@ def perf_timer(argument, debug=True, limit=5):
     return real_decorator
 
 
-def attach_timer(cls, limit=5):
+def attach_timer(cls, limit=0):
     parent = cls.mro()[1]
     diff_method = set(dir(cls)) - set(dir(parent))
     method_list = [
@@ -42,7 +42,7 @@ def attach_timer(cls, limit=5):
         (hasattr(parent, func) and getattr(parent, func) != getattr(cls, func)))
     ]
 
-    # pprint.pprint(method_list)
+    pprint.pprint(method_list)
 
     for f, n in method_list:
         setattr(cls, n, perf_timer(cls.__name__ + '.' + n, limit=limit)(f))

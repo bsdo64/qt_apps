@@ -2,7 +2,6 @@ from colorama import init, Fore
 import pprint
 import time
 
-
 init(autoreset=True)
 
 
@@ -31,22 +30,56 @@ def perf_timer(argument, debug=True, limit=1):
                 result = fn(*args, **kwargs)
 
             return result
+
         return wrapper
+
     return real_decorator
 
 
-def attach_timer(cls, limit=0):
-    parent = cls.mro()[1]
-    diff_method = set(dir(cls)) - set(dir(parent))
+def attach_timer(cls: type, limit=1) -> list:
+
+    """ Attach performance timer to class
+
+    Find only subclass's or override methods and
+    print consumed times of the methods.
+
+    Parameters
+    ----------
+    cls : class
+        Class that we want to add timers.
+    limit : int, optional
+        Print limit timer (ms).
+
+    Returns
+    -------
+    method_list : array
+        Returning attached methods information.
+
+    Examples
+    --------
+    These are written in doctest format, and should illustrate how to
+    use the function.
+
+    >>> class A(object):
+    ...     pass
+
+    >>> attach_timer(A)
+
+    """
+
+    parent = cls.mro()[1]  # get super class
+    sub_methods = set(dir(cls)) - set(dir(parent))  # child - parent
     method_list = [
         (getattr(cls, func), func) for func in dir(cls) if
         callable(getattr(cls, func)) and
-        # not func.startswith("__") and
-        (func in diff_method or
-        (hasattr(parent, func) and getattr(parent, func) != getattr(cls, func)))
+        (func in sub_methods or
+            (hasattr(parent, func) and
+             getattr(parent, func) != getattr(cls, func)))
     ]
 
-    pprint.pprint(method_list)
+    # pprint.pprint(method_list)
 
     for f, n in method_list:
         setattr(cls, n, perf_timer(cls.__name__ + '.' + n, limit=limit)(f))
+
+    return method_list

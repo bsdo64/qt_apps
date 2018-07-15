@@ -3,8 +3,6 @@ from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QPen
 from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
 
-from util import perf_timer
-
 
 class SceneRectItem(QGraphicsItem):
     def __init__(self, parent=None):

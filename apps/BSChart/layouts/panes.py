@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QGraphicsView
+from PyQt5.QtWidgets import QWidget, QHBoxLayout
 
 from graphic_views import TimeAxisView
 

@@ -1,11 +1,10 @@
-import time
 from sys import platform
 
 import pandas
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen, QTransform
+from PyQt5.QtGui import QPen, QTransform, QColor
 from PyQt5.QtWidgets import QGraphicsView, QOpenGLWidget
 
 from data.model import Model
@@ -21,7 +20,7 @@ class ChartView(QGraphicsView):
         # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setViewportMargins(0, 0, 0, 0)
-        # self.setTransformationAnchor(self.NoAnchor)
+        self.setBackgroundBrush(QColor('#1B1D27'))
         # self.setViewport(QOpenGLWidget())
         # self.setRenderHint(QPainter.Antialiasing)
         # self.setFrameStyle(QFrame.NoFrame)
@@ -34,10 +33,7 @@ class ChartView(QGraphicsView):
         scene = ChartScene()
         self.candlestick = CandleStickItem(self.model)
         scene.addItem(self.candlestick)
-        # self.scene_rect = SceneRectItem()
-        # scene.addItem(self.scene_rect)
-        # scene.addItem(CustomRectsItem())
-        # self.scene_rect = scene.addRect(scene.sceneRect(), pen)
+
         self.setScene(scene)
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
@@ -48,25 +44,22 @@ class ChartView(QGraphicsView):
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
 
-        trans = QTransform()
-        trans.scale(*self.model.scale())
-        self.setTransform(trans)
         super().resizeEvent(event)
 
     def wheelEvent(self, event: QtGui.QWheelEvent):
+        """ ChartView's wheel event handler
 
-        # print(event.angleDelta())
+        Handle mouse wheel event.
+        This method must handle :
+            1. Change range of model by y-axis
+            2. Change translate of model by x-axis
 
-        # scale by mouse point
-        # self.setTransformationAnchor(QGraphicsView.NoAnchor)
-        # self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        Parameters
+        ----------
+        event : QtGui.QWheelEvent
+            QGraphicsView's wheel event.
 
-        # old_pos = self.mapToScene(event.pos())
-        # self.scale(1 + event.angleDelta().y() / 1000, 1)
-        # new_pos = self.mapToScene(event.pos())
-        # delta = new_pos - old_pos
-        # print(delta)
-        # self.translate(delta.x(), delta.y())
+        """
 
         if platform == "darwin":
             delta_x = event.pixelDelta().x()

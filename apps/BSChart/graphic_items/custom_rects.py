@@ -6,8 +6,6 @@ from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QPainterPath, QPen
 from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
 
-from util import perf_timer
-
 
 class CustomRectsItem(QGraphicsItem):
     def __init__(self, parent=None):

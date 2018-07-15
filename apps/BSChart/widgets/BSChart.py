@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QSizePolicy, QVBoxLayout, QSplitter
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSplitter
 
 from graphic_views import ChartAxisView, ChartView, TimeAxisView
 from layouts.panes import ChartPane, ChartTimePane
@@ -62,7 +62,6 @@ class BSChart(QWidget):
         QWidget.__init__(self, parent)
 
         self.setContentsMargins(0, 0, 0, 0)
-        self.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
 
         self.vbox = QVBoxLayout(self)
         self.vbox.setSpacing(1)

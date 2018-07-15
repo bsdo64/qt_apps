@@ -32,6 +32,8 @@ class MyItem(QGraphicsItem):
         for i in range(200 - 1):
             height = data['high'][i] - data['low'][i]
             painter.fillRect(QRectF(i * 3, data['high'][i] - data['high'].min(), 1, height), brush)
+
+        painter.fillRect(QRectF(100, 100, 100, -100), Qt.blue)
         painter.restore()
 
     def boundingRect(self):

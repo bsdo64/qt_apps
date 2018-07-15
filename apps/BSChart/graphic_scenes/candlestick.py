@@ -16,50 +16,53 @@ class CandleStickItem(QGraphicsItem):
         self.path: QPainterPath = None
         self.max_data_length = 1000
 
-    def paint(self, painter: QtGui.QPainter, option: QStyleOptionGraphicsItem, widget: typing.Optional[QWidget] = ...):
+    def paint(self,
+              painter: QtGui.QPainter,
+              option: QStyleOptionGraphicsItem,
+              widget: typing.Optional[QWidget] = ...):
 
+        # Set level of detail
         # print(option.levelOfDetailFromTransform(painter.worldTransform()))
-        painter.save()
-        # painter.setRenderHint(painter.Antialiasing)
+        self.make_path()
 
+        painter.save()
         pen = QPen()
         pen.setCosmetic(True)
         painter.setPen(pen)
-
-        self._make_path()
-
         painter.fillPath(self.path, Qt.green)
-        # painter.drawRect(QRectF(model_data['time_axis'].min(),
-        #                         model_data['n_open'].min(),
-        #                         len(model_data),
-        #                         model_data['n_open'].max() - model_data['n_close'].min()))
-
         painter.restore()
 
-    def _make_path(self):
+    def make_path(self):
+        data = self.model.data()
+
         if not self.path:
-            data = self.model.data()
+            # draw new initial path
             path = QPainterPath()
-            for i, row in data.iterrows():
-                path.addRect(row['time_axis'], row['n_open'], 1, row['n_close'] - row['n_open'])
+            CandleStickItem.draw_path(data, path)
 
             self.path = path
 
         else:
-            data = self.model.data()
-            len_data = len(data)
 
-            if len_data > self.max_data_length:  # 1500 > 1000
+            if len(data) > self.max_data_length:  # 1500 > 1000
                 self.max_data_length += 500
 
-                next_data = self.model.next_data()
                 # draw uncached path
+                next_data = self.model.next_data()
                 path = QPainterPath()
-                for i, row in next_data.iterrows():
-                    path.addRect(row['time_axis'], row['n_open'], 1,
-                                 row['n_close'] - row['n_open'])
+                CandleStickItem.draw_path(next_data, path)
 
                 self.path.addPath(path)
+
+    @staticmethod
+    def draw_path(data, path):
+        for i, row in data.iterrows():
+            path.addRect(
+                row['time_axis'],  # x
+                row['n_open'],  # y
+                1,  # width
+                row['n_open'] - row['n_close'],  # height
+            )
 
     def boundingRect(self):
         model_data = self.model.data()

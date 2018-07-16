@@ -50,7 +50,6 @@ class CandleStickItem(QGraphicsItem):
             self.thread.start(w)
 
         else:
-            data = self.model.data()
             if len(data) > self.max_data_length:  # 1500 > 1000
                 self.max_data_length += 500
 

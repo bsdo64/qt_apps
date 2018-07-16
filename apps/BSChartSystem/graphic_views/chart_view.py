@@ -18,8 +18,8 @@ class ChartView(QGraphicsView):
     def __init__(self, parent=None):
         QGraphicsView.__init__(self, parent)
 
-        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setViewportMargins(0, 0, 0, 0)
         self.setBackgroundBrush(QColor('#1B1D27'))
         # self.setViewport(QOpenGLWidget())
@@ -35,7 +35,6 @@ class ChartView(QGraphicsView):
 
     def open_file(self, file_name):
         self.model = Model(pandas.read_pickle(file_name), self)
-
 
     def set_scene(self):
         print('call set_scene')

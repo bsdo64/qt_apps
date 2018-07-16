@@ -1,14 +1,14 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout
 
-from graphic_views import TimeAxisView
+from graphic_views import TimeAxisView, ChartView, ChartAxisView
 
 
 class ChartPane:
-    def __init__(self, chart, axis):
+    def __init__(self, chart: ChartView, axis: ChartAxisView):
         self.chart = chart
         self.axis = axis
 
-    def create(self, parent=None):
+    def create(self, parent=None) -> QWidget:
         widget = QWidget(parent)
         hbox = QHBoxLayout()
         hbox.addWidget(self.chart)

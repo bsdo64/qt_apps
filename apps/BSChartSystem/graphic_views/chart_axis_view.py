@@ -22,9 +22,6 @@ class ChartAxisView(QGraphicsView):
         scene.addText('world')
         self.setScene(scene)
 
-    def resizeEvent(self, event: QtGui.QResizeEvent):
-        self.scene().setSceneRect(QRectF(self.rect()))
-
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         trans = self.text.transform()
         trans.translate(11, 11)

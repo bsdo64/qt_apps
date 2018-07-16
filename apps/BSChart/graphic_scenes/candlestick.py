@@ -1,20 +1,24 @@
 import typing
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtGui import QPen, QPainterPath, QTransform
-from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem
+from PyQt5.QtCore import Qt, QRectF, QThreadPool
+from PyQt5.QtGui import QPen, QPainterPath
+from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem, QGraphicsSceneWheelEvent
 
 from data.model import Model
-from utils import attach_timer
+from util.fn import attach_timer
+from util.thread import Worker, Thread
 
 
 class CandleStickItem(QGraphicsItem):
     def __init__(self, model, parent=None):
         QGraphicsItem.__init__(self, parent)
         self.model: Model = model
-        self.path: QPainterPath = None
+        self.path = QPainterPath()
         self.max_data_length = 1000
+
+        self.thread = Thread()
+        self.make_path()
 
     def paint(self,
               painter: QtGui.QPainter,
@@ -23,7 +27,7 @@ class CandleStickItem(QGraphicsItem):
 
         # Set level of detail
         # print(option.levelOfDetailFromTransform(painter.worldTransform()))
-        self.make_path()
+        # self.make_path()
 
         painter.save()
         pen = QPen()
@@ -32,30 +36,32 @@ class CandleStickItem(QGraphicsItem):
         painter.fillPath(self.path, Qt.green)
         painter.restore()
 
+    def wheelEvent(self, event: 'QGraphicsSceneWheelEvent'):
+        self.make_path()
+
     def make_path(self):
         data = self.model.data()
 
-        if not self.path:
+        if self.path.length() == 0.0:  # path.length == 0.0
             # draw new initial path
-            path = QPainterPath()
-            CandleStickItem.draw_path(data, path)
-
-            self.path = path
+            print('draw new initial path')
+            w = self.thread.make_worker(self.draw_path, data)
+            w.sig.finished.connect(self.update)
+            self.thread.start(w)
 
         else:
-
+            data = self.model.data()
             if len(data) > self.max_data_length:  # 1500 > 1000
                 self.max_data_length += 500
 
-                # draw uncached path
+                print('draw next path')
                 next_data = self.model.next_data()
-                path = QPainterPath()
-                CandleStickItem.draw_path(next_data, path)
+                w = self.thread.make_worker(self.draw_path, next_data)
+                w.sig.finished.connect(self.update)
+                self.thread.start(w)
 
-                self.path.addPath(path)
-
-    @staticmethod
-    def draw_path(data, path):
+    def draw_path(self, data):
+        path = QPainterPath()
         for i, row in data.iterrows():
             path.addRect(
                 row['time_axis'],  # x
@@ -63,6 +69,8 @@ class CandleStickItem(QGraphicsItem):
                 1,  # width
                 row['n_open'] - row['n_close'],  # height
             )
+
+        self.path.addPath(path)
 
     def boundingRect(self):
         model_data = self.model.data()

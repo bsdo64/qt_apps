@@ -36,7 +36,7 @@ def perf_timer(argument, debug=True, limit=1):
     return real_decorator
 
 
-def attach_timer(cls: type, limit=1) -> list:
+def attach_timer(cls: type, limit=30) -> list:
 
     """ Attach performance timer to class
 

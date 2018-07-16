@@ -109,6 +109,7 @@ class MainWindow(QMainWindow):
         self.timer.start()
 
     def progress_fn(self, n):
+        print(self.counter)
         print("%d%% done" % n)
 
     def execute_this_fn(self, progress_callback):

@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSplitter
 
 from graphic_views import ChartAxisView, ChartView, TimeAxisView
 from layouts.panes import ChartPane, ChartTimePane
-from utils import attach_timer
+from util.fn import attach_timer
 
 
 class ChartLayoutManager:

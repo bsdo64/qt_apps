@@ -1,9 +1,9 @@
 import pandas as pd
-from PyQt5.QtCore import QRectF, QRect
+from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QTransform
 from PyQt5.QtWidgets import QGraphicsView
 
-from utils import attach_timer
+from util.fn import attach_timer
 
 
 class Model:
@@ -31,21 +31,23 @@ class Model:
             self.series['n_' + i] = m - self.series[i]
 
     def data(self) -> pd.DataFrame:
-        data = self.series[-int(self.default_data_size + self.axis_width / self.view.width()):]
+        data = self.series[-int(self.default_data_size + self.axis_width / self.view.width() *10):]
 
         return data
 
     def next_data(self, data_range=None):
         next_data_size = data_range or self.next_data_size
         v = int(self.default_data_size +
-                self.axis_width / self.view.width()) // next_data_size - 2
+                self.axis_width / self.view.width()*10) // next_data_size - 2
         return self.series[-(self.default_data_size + next_data_size * (v+1)):-(self.default_data_size + next_data_size * v)]
 
     def scale(self) -> (float, float):
         data_range = int(self.default_data_size +
-                         self.axis_width / self.view.width())
+                         self.axis_width / self.view.width()*10)
+        model_data = self.data()
         scale_x = self.view.width() / data_range
-        return scale_x, 1
+        scale_y = self.view.height() / (model_data['n_open'].max() - model_data['n_close'].min())
+        return scale_x, scale_y
 
     def add_range(self, factor):
         if self.axis_width + factor > 0:

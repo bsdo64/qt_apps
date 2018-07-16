@@ -4,13 +4,14 @@ import pandas
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen, QTransform, QColor
-from PyQt5.QtWidgets import QGraphicsView, QOpenGLWidget
+from PyQt5.QtGui import QPen, QColor
+from PyQt5.QtWidgets import QGraphicsView
 
 from data.model import Model
 from graphic_scenes.candlestick import CandleStickItem
 from graphic_scenes.chart_scene import ChartScene
-from utils import attach_timer
+from util.fn import attach_timer
+from util.thread import Thread
 
 
 class ChartView(QGraphicsView):
@@ -25,16 +26,27 @@ class ChartView(QGraphicsView):
         # self.setRenderHint(QPainter.Antialiasing)
         # self.setFrameStyle(QFrame.NoFrame)
 
-        data = pandas.read_pickle('../../bitmex_1m_2018.pkl')
-        self.model = Model(data, self)
+        self.thread = Thread()
+        w = self.thread.make_worker(self.open_file, '../../bitmex_1m_2018.pkl')
+        w.sig.finished.connect(self.set_scene)
+        self.thread.start(w)
 
-        pen = QPen(Qt.red)
-        pen.setCosmetic(True)
+        self.open_file_finished = False
+
+    def open_file(self, file_name):
+        self.model = Model(pandas.read_pickle(file_name), self)
+
+
+    def set_scene(self):
+        print('call set_scene')
+        self.chart_item = CandleStickItem(self.model)
+
         scene = ChartScene()
-        self.candlestick = CandleStickItem(self.model)
-        scene.addItem(self.candlestick)
+        scene.addItem(self.chart_item)
 
         self.setScene(scene)
+        self.chart_item.update()
+        self.open_file_finished = True
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         # print(self.scene().itemAt(self.mapToScene(event.pos()), QTransform()))
@@ -60,16 +72,17 @@ class ChartView(QGraphicsView):
             QGraphicsView's wheel event.
 
         """
+        if self.open_file_finished:
+            if platform == "darwin":
+                delta_x = event.pixelDelta().x()
+                delta_y = event.pixelDelta().y()
+            else:
+                delta_x = event.angleDelta().x()
+                delta_y = event.angleDelta().y()
 
-        if platform == "darwin":
-            delta_x = event.pixelDelta().x()
-            delta_y = event.pixelDelta().y()
-        else:
-            delta_x = event.angleDelta().x()
-            delta_y = event.angleDelta().y()
+            self.model.add_range(delta_y)
+            self.chart_item.update()
 
-        self.model.add_range(delta_y)
-        self.candlestick.update()
         super().wheelEvent(event)
 
 

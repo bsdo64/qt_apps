@@ -26,8 +26,11 @@ class Request:
             api_secret=bitmex.api_keys['real']['order']['secret']
         )
 
+        # 525600
         self.year_first = dt.datetime(self.now.year, 1, 1, tzinfo=dt.timezone.utc)
+        # 880000 - 525600
         self.now_to_min = (self.now - self.year_first).total_seconds() // 60
+        # 880000 - (525600 + 100000)
         self.now_from_start = (
             self.now - (self.year_first + dt.timedelta(minutes=self.start))
         ).total_seconds() // 60
@@ -53,12 +56,12 @@ class Request:
         s = self.count
         j = self.client.json()
         self.rate_limit = self.client.headers()['x-ratelimit-remaining']
-        current = (len(j) + len(self.df))
+        current = (len(j) + len(self.df))  # 100000
 
         print('now: {}, current: {}, percent: {:.2f}%, rate_limit: {}'.format(
             self.now_to_min,
             current,
-            (self.now_to_min - current)/self.now_from_start * 100,
+            current/self.now_from_start * 100,
             self.rate_limit
         ))
 

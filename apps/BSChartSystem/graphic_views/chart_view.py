@@ -44,7 +44,6 @@ class ChartView(QGraphicsView):
         scene.addItem(self.chart_item)
 
         self.setScene(scene)
-        self.chart_item.update()
         self.open_file_finished = True
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
@@ -79,7 +78,7 @@ class ChartView(QGraphicsView):
                 delta_x = event.angleDelta().x()
                 delta_y = event.angleDelta().y()
 
-            self.model.add_range(delta_y)
+            self.model.change_x_range(delta_y)
             self.chart_item.update()
 
         super().wheelEvent(event)

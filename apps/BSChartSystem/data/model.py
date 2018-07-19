@@ -23,7 +23,7 @@ class Model:
         self.view = view
 
         self.x_range = self._DEFAULT_X_RANGE
-        self.next_data_size = self._DEFAULT_NEXT_X_RANGE
+        self.next_x_len = self._DEFAULT_NEXT_X_RANGE
 
         self.marker_gap = 50
         self.max_x_range = 100_000
@@ -45,7 +45,7 @@ class Model:
         return self._DEFAULT_X_RANGE
 
     def next_x_range(self) -> int:
-        return self.next_data_size
+        return self.next_x_len
 
     def current_x_range(self) -> int:
         return self.x_range // self.marker_gap  # 100 // 50 = 2
@@ -54,7 +54,7 @@ class Model:
         # Time axis range must be positive.
         if self.x_range + factor > self._DEFAULT_X_RANGE:
             self.x_range += factor
-            self.next_data_size = self.x_range // 15  # 15% of x_range
+            self.next_x_len = min(self.x_range // 15, 2000)  # 15% of x_range
 
             # Scale view after change x-range to fit view
             trans = QTransform()
@@ -71,15 +71,15 @@ class Model:
         return QRectF(
             data['time_axis_scaled'].max() - self.x_range,
             data['r_high'].min(),
-            self.x_range + 1,
-            data['r_low'].max() - data['r_high'].min()
+            self.x_range,
+            data['high'].max() - data['low'].min()
         )
 
     def current_data(self, add=0) -> pd.DataFrame:
         return self.series[-(self.current_x_range()+add):]
 
     def next_data(self, data_range=None) -> pd.DataFrame:
-        next_data_size = data_range or self.next_data_size  # 500
+        next_data_size = data_range or self.next_x_len  # 500
         v = self.current_x_range() // next_data_size  # 2 // 500
         origin_gap = self._DEFAULT_X_RANGE // self.marker_gap
         return self.series[
@@ -93,6 +93,9 @@ class Model:
         scale_y = self.view.height() / (model_data['r_low'].max() -
                                         model_data['r_high'].min())
         return scale_x, scale_y
+
+    def scale_x(self):
+        return self.view.width() / self.x_range
 
 
 attach_timer(Model)

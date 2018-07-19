@@ -3,7 +3,7 @@ from sys import platform
 import pandas
 
 from PyQt5 import QtGui
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsView
 
@@ -22,6 +22,7 @@ class ChartView(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setViewportMargins(0, 0, 0, 0)
         self.setBackgroundBrush(QColor('#1B1D27'))
+
         # self.setViewport(QOpenGLWidget())
         # self.setRenderHint(QPainter.Antialiasing)
         # self.setFrameStyle(QFrame.NoFrame)
@@ -53,7 +54,10 @@ class ChartView(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def resizeEvent(self, event: QtGui.QResizeEvent):
+        delta: QSize = (event.size() - event.oldSize())
 
+        if hasattr(self, 'chart_item'):
+            self.model.change_x_range(delta.width())
         super().resizeEvent(event)
 
     def wheelEvent(self, event: QtGui.QWheelEvent):
@@ -79,7 +83,6 @@ class ChartView(QGraphicsView):
                 delta_y = event.angleDelta().y()
 
             self.model.change_x_range(delta_y)
-            self.chart_item.update()
 
         super().wheelEvent(event)
 

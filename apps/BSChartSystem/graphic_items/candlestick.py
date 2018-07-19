@@ -3,11 +3,12 @@ import typing
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt, QRectF, QThreadPool
 from PyQt5.QtGui import QPen, QPainterPath, QColor
-from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem, QGraphicsSceneWheelEvent
+from PyQt5.QtWidgets import QGraphicsItem, QWidget, QStyleOptionGraphicsItem, \
+    QGraphicsSceneWheelEvent
 
 from data.model import Model
 from util.fn import attach_timer
-from util.thread import Worker, Thread
+from util.thread import Thread
 
 
 class CandleStickItem(QGraphicsItem):
@@ -23,6 +24,13 @@ class CandleStickItem(QGraphicsItem):
         self.minus_bar_path = QPainterPath()
         self.minus_bar_path.setFillRule(Qt.WindingFill)
 
+        self.cache = {
+            'plus_line_path': QPainterPath(),
+            'minus_line_path': QPainterPath(),
+            'plus_bar_path': QPainterPath(),
+            'minus_bar_path': QPainterPath()
+        }
+
         self.thread = Thread()
         self.make_path()
 
@@ -34,9 +42,11 @@ class CandleStickItem(QGraphicsItem):
         # Set level of detail
         # print(option.levelOfDetailFromTransform(painter.worldTransform()))
 
-        rect = self.model.make_scene_rect()
-        rect_path = QPainterPath()
-        rect_path.addRect(rect)
+        # rect = self.model.make_scene_rect()
+        # rect_path = QPainterPath()
+        # rect_path.addRect(rect)
+
+
 
         # draw plus line
         painter.save()
@@ -45,20 +55,40 @@ class CandleStickItem(QGraphicsItem):
         pen.setCosmetic(True)
         painter.setPen(pen)
         # painter.setRenderHint(painter.Antialiasing)
-        painter.drawPath(self.plus_line_path)  # draw plus line
+        self.print_cache_path(painter, 'drawPath', 'plus_line_path', 1000)
 
         # draw minus line
         pen.setColor(QColor("#6F3541"))
-        pen.setCosmetic(True)
         painter.setPen(pen)
-        painter.drawPath(self.minus_line_path)
+        self.print_cache_path(painter, 'drawPath', 'minus_line_path', 1000)
 
         # draw plus bar
-        painter.fillPath(self.plus_bar_path & rect_path, Qt.green)  # draw plus bar
+        self.print_cache_path(painter, 'fillPath',
+                              'plus_bar_path', 1000, QColor('#7BB888'))
+        # painter.fillPath(self.plus_bar_path, Qt.green)  # draw plus bar
 
         # draw minus bar
-        painter.fillPath(self.minus_bar_path & rect_path, Qt.red)  # draw minus bar
+        self.print_cache_path(painter, 'fillPath',
+                              'minus_bar_path', 1000, QColor('#CC4E5C'))
+        # painter.fillPath(self.minus_bar_path, Qt.red)  # draw minus bar
         painter.restore()
+
+    def print_cache_path(self, painter, fn, name, cache_len, *args):
+        r = self.model.current_x_range()
+        l = self.cache[name].length()
+        p = getattr(painter, fn)
+
+        if 0 < r <= cache_len:
+            if l > 0:
+                p(self.cache[name], *args)  # draw cache
+            else:
+                p(self.__getattribute__(name), *args)
+
+        else:
+            if l == 0:
+                self.cache[name] = QPainterPath(self.__getattribute__(name))
+
+            p(self.__getattribute__(name),  *args)  # draw non-cache
 
     def wheelEvent(self, event: 'QGraphicsSceneWheelEvent'):
         self.make_path()

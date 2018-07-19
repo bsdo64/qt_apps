@@ -37,9 +37,6 @@ class Model:
         self.series['time_axis_scaled'] = (
             self.series['time_axis'] * self.marker_gap
         )  # 1262304000 ~ 1276503350
-        self.series['sub_open_close'] = (
-            self.series['close'] > self.series['open']
-        )
 
         for i in ['close', 'open', 'low', 'high']:
             self.series['r_' + i] = self.INT_MAX - self.series[i]

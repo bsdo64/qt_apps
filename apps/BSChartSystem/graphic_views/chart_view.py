@@ -4,11 +4,11 @@ import pandas
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen, QColor
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QGraphicsView
 
 from data.model import Model
-from graphic_scenes.candlestick import CandleStickItem
+from graphic_items.candlestick import CandleStickItem
 from graphic_scenes.chart_scene import ChartScene
 from util.fn import attach_timer
 from util.thread import Thread

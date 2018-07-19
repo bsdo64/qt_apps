@@ -34,6 +34,10 @@ class CandleStickItem(QGraphicsItem):
         # Set level of detail
         # print(option.levelOfDetailFromTransform(painter.worldTransform()))
 
+        rect = self.model.make_scene_rect()
+        rect_path = QPainterPath()
+        rect_path.addRect(rect)
+
         # draw plus line
         painter.save()
         pen = QPen()
@@ -50,10 +54,10 @@ class CandleStickItem(QGraphicsItem):
         painter.drawPath(self.minus_line_path)
 
         # draw plus bar
-        painter.fillPath(self.plus_bar_path, Qt.green)  # draw plus bar
+        painter.fillPath(self.plus_bar_path & rect_path, Qt.green)  # draw plus bar
 
         # draw minus bar
-        painter.fillPath(self.minus_bar_path, Qt.red)  # draw minus bar
+        painter.fillPath(self.minus_bar_path & rect_path, Qt.red)  # draw minus bar
         painter.restore()
 
     def wheelEvent(self, event: 'QGraphicsSceneWheelEvent'):
